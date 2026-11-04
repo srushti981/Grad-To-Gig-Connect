@@ -1,24 +1,71 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDownRight, ArrowRight, Bell, Bookmark, BriefcaseBusiness, Building2, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, Compass, GraduationCap, LayoutDashboard, MapPin, Menu, Search, SlidersHorizontal, Sparkles, TrendingUp, X } from "lucide-react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
-export const Route = createFileRoute("/")({
-  component: Index,
-});
+export const Route = createFileRoute("/")({ component: Index });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const jobs = [
+  { id: 1, company: "Google", mark: "G", color: "#fff", ink: "#4285f4", title: "Associate Software Engineer", type: "Full-time", place: "Bengaluru · Hybrid", pay: "₹18–24 LPA", date: "Nov 18", tag: "Top match", match: 98, logo: "google" },
+  { id: 2, company: "Razorpay", mark: "R", color: "#eaf2ff", ink: "#2563eb", title: "Product Engineering Intern", type: "Internship", place: "Bengaluru · On-site", pay: "₹65,000 / month", date: "Nov 21", tag: "New", match: 94, logo: "razor" },
+  { id: 3, company: "Microsoft", mark: "M", color: "#fff", ink: "#2675c9", title: "Software Engineer · University", type: "Full-time", place: "Hyderabad · Hybrid", pay: "₹21–28 LPA", date: "Nov 24", tag: "Top match", match: 91, logo: "microsoft" },
+  { id: 4, company: "Atlassian", mark: "A", color: "#eff5ff", ink: "#1868db", title: "Graduate Software Engineer", type: "Full-time", place: "Remote · India", pay: "₹20–26 LPA", date: "Nov 28", tag: "Closing soon", match: 87, logo: "atlassian" },
+  { id: 5, company: "Zomato", mark: "z", color: "#fff1f0", ink: "#e23744", title: "Data Analyst Intern", type: "Internship", place: "Gurugram · On-site", pay: "₹45,000 / month", date: "Dec 02", tag: "New", match: 83, logo: "zomato" },
+];
+
+const applications = [
+  { company: "Adobe", mark: "A", color: "#fff0ed", ink: "#eb1000", title: "Software Engineer", status: "Interview", progress: 68, next: "Technical round · Nov 12" },
+  { company: "Flipkart", mark: "F", color: "#fff7e5", ink: "#2874f0", title: "SDE Intern", status: "Shortlisted", progress: 42, next: "Online assessment · Nov 14" },
+  { company: "Deloitte", mark: "D", color: "#f0edff", ink: "#6b4ce6", title: "Analyst Trainee", status: "Applied", progress: 19, next: "Application under review" },
+];
+
 function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("All roles");
+  const [saved, setSaved] = useState<number[]>([]);
+  const [applied, setApplied] = useState<number[]>([]);
+  const [activeNav, setActiveNav] = useState("Overview");
+  const [notice, setNotice] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [modalJob, setModalJob] = useState<(typeof jobs)[number] | null>(null);
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        document.getElementById("job-search")?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+  const filteredJobs = useMemo(() => jobs.filter((job) => (filter === "All roles" || job.type === filter) && `${job.title} ${job.company} ${job.place}`.toLowerCase().includes(query.toLowerCase())), [query, filter]);
+  const toast = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2800); };
+  const nav = [{ name: "Overview", icon: LayoutDashboard }, { name: "Find opportunities", icon: Compass }, { name: "My applications", icon: BriefcaseBusiness }, { name: "Events & calendar", icon: CalendarDays }];
+  const goTo = (name: string) => { setActiveNav(name); setMobileMenu(false); if (name === "Find opportunities") document.getElementById("opportunities")?.scrollIntoView({ behavior: "smooth" }); else if (name === "My applications") document.getElementById("applications")?.scrollIntoView({ behavior: "smooth" }); else if (name === "Events & calendar") document.getElementById("events")?.scrollIntoView({ behavior: "smooth" }); else window.scrollTo({ top: 0, behavior: "smooth" }); };
+  return <div className="portal-shell">
+    <aside className={`sidebar ${mobileMenu ? "sidebar-open" : ""}`}>
+      <a className="brand" href="#top" onClick={() => goTo("Overview")}><span className="brand-icon"><GraduationCap size={21}/></span><span>campus<span className="brand-light">connect</span><small>CAREERS, CONNECTED</small></span></a>
+      <div className="side-label">WORKSPACE</div>
+      <nav>{nav.map(({name, icon: Icon}) => <button key={name} className={`nav-item ${activeNav === name ? "active" : ""}`} onClick={() => goTo(name)}><Icon size={18}/><span>{name}</span>{name === "My applications" && <i className="nav-count">3</i>}</button>)}</nav>
+      <div className="side-label tools-label">YOUR JOURNEY</div>
+      <button className="nav-item" onClick={() => toast("Your profile is 85% complete — add your resume to reach 100%.")}><GraduationCap size={18}/><span>My profile</span><span className="profile-dot"/></button>
+      <button className="nav-item" onClick={() => toast("Career resources are coming soon.")}><Sparkles size={18}/><span>Career resources</span></button>
+      <div className="sidebar-bottom"><div className="help-card"><span className="help-icon"><CircleHelp size={16}/></span><strong>Need a hand?</strong><p>Your placement team is here to help you land your first role.</p><button onClick={() => toast("Reach your placement cell at placements@campus.edu")}>Talk to your placement cell <ArrowRight size={13}/></button></div><button className="student-profile" onClick={() => toast("Signed in as Srushti · Student")}><span className="avatar">SH</span><span><b>Srushti</b><small>Computer Science · 2026</small></span><ChevronDown size={15}/></button></div>
+    </aside>
+    {mobileMenu && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileMenu(false)}/>}
+    <main className="main-area" id="top"><header className="topbar"><button className="mobile-menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation"><Menu size={20}/></button><div className="breadcrumb">Student portal <span>/</span> <b>{activeNav}</b></div><div className="top-actions"><span className="semester-pill"><span/> Placement season · 2026–27</span><button className="icon-button notification-button" aria-label="Notifications" onClick={() => toast("You're all caught up. Check back for placement updates!")}><Bell size={18}/><i/></button><div className="top-avatar">AS</div></div></header>
+      <div className="page-content"><section className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line"/> WEDNESDAY, NOVEMBER 4, 2026</div><h1>Your next chapter<br/><em>starts here.</em></h1><p className="welcome-copy">Good morning, Aarav. Your next opportunity is closer than you think.</p></div><div className="season-card"><div className="season-top"><span className="season-mark"><TrendingUp size={17}/></span><span className="season-label">YOUR PLACEMENT SEASON</span></div><div className="season-stat"><strong>73</strong><span>days remaining</span></div><div className="season-progress"><span/></div><div className="season-foot"><span>Season ends Jan 16, 2027</span><span>On track <ArrowDownRight size={13}/></span></div></div></section>
+      <section className="stats-grid" aria-label="Placement overview"><article className="stat-card"><span className="stat-icon lavender"><BriefcaseBusiness size={17}/></span><div className="stat-caption">ACTIVE APPLICATIONS</div><div className="stat-number">03 <span>applications</span></div><div className="stat-note"><span className="note-dot violet"/> 1 interview scheduled</div></article><article className="stat-card"><span className="stat-icon mint"><Building2 size={17}/></span><div className="stat-caption">OPEN OPPORTUNITIES</div><div className="stat-number">24 <span>roles</span></div><div className="stat-note"><span className="note-dot green"/> 8 new this week</div></article><article className="stat-card"><span className="stat-icon peach"><Bookmark size={17}/></span><div className="stat-caption">SAVED FOR LATER</div><div className="stat-number">{saved.length.toString().padStart(2,"0")} <span>roles</span></div><div className="stat-note"><span className="note-dot orange"/> Pick up where you left off</div></article><article className="stat-card"><span className="stat-icon blue"><CalendarDays size={17}/></span><div className="stat-caption">UP NEXT</div><div className="stat-number stat-date">NOV 12</div><div className="stat-note"><span className="note-dot blue-dot"/> Adobe · Technical round</div></article></section>
+      <section className="opportunity-section" id="opportunities"><div className="section-heading"><div><div className="section-kicker">MADE FOR YOUR NEXT MOVE</div><h2>Opportunities <span>for you</span></h2><p>Roles matched to your profile, skills, and ambitions.</p></div><button className="text-link" onClick={() => { setShowAll(!showAll); document.getElementById("job-search")?.focus(); }}>{showAll ? "Show fewer" : "Explore all roles"} <ArrowRight size={15}/></button></div>
+        <div className="job-toolbar"><label className="search-box"><Search size={17}/><input id="job-search" placeholder="Search roles, companies, or skills..." value={query} onChange={(e) => setQuery(e.target.value)}/><kbd>⌘ K</kbd></label><div className="filter-group"><SlidersHorizontal size={15}/>{["All roles","Full-time","Internship"].map((f) => <button key={f} onClick={() => setFilter(f)} className={`filter-chip ${filter === f ? "selected" : ""}`}>{f}</button>)}</div></div>
+        <div className="job-list">{filteredJobs.slice(0,showAll?5:4).map((job) => <article className="job-card" key={job.id}><div className={`company-mark ${job.logo}`} style={{background:job.color,color:job.ink}}>{job.mark}</div><div className="job-main"><div className="company-line">{job.company}<span className="verified">✓</span><span className={`job-tag ${job.tag === "New" ? "tag-new" : job.tag === "Closing soon" ? "tag-close" : ""}`}>{job.tag}</span></div><h3>{job.title}</h3><div className="job-meta"><span><MapPin size={13}/>{job.place}</span><i/><span>{job.type}</span><i/><b>{job.pay}</b></div></div><div className="job-match"><span>{job.match}% match</span><div className="match-track"><i style={{width:`${job.match}%`}}/></div><small>Based on your profile</small></div><div className="job-actions"><button className={`save-button ${saved.includes(job.id)?"saved":""}`} aria-label={saved.includes(job.id)?"Remove saved job":"Save job"} onClick={() => setSaved(saved.includes(job.id)?saved.filter(id=>id!==job.id):[...saved,job.id])}><Bookmark size={17} fill={saved.includes(job.id)?"currentColor":"none"}/></button><button className="apply-button" onClick={() => applied.includes(job.id)?toast(`Your application to ${job.company} is in progress.`):setModalJob(job)}>{applied.includes(job.id)?"Applied":"View role"}<ArrowRight size={14}/></button></div></article>)}{filteredJobs.length===0&&<div className="empty-state"><Search size={22}/><b>No roles found</b><span>Try another keyword or switch your filters.</span></div>}</div><div className="deadline-note"><Clock3 size={14}/><span>Deadlines are approaching for <b>4 opportunities</b></span><button onClick={() => {setFilter("All roles");setQuery("");setShowAll(true)}}>See all deadlines <ArrowRight size={13}/></button></div>
+      </section>
+      <div className="lower-grid"><section className="applications-panel" id="applications"><div className="lower-heading"><div><div className="section-kicker">KEEP THE MOMENTUM</div><h2>Your applications</h2></div><button className="mini-link" onClick={() => toast("Showing all 3 active applications.")}>View all <ArrowRight size={14}/></button></div><div className="application-list">{applications.map((app,i)=><article key={app.company} className="application-row"><div className="company-mark mini-mark" style={{background:app.color,color:app.ink}}>{app.mark}</div><div className="application-info"><b>{app.company}</b><span>{app.title}</span><div className="application-progress"><i style={{width:`${app.progress}%`}}/></div></div><div className="application-status"><span className={`status-chip status-${i}`}>{app.status}</span><small>{app.next}</small></div><button className="row-arrow" aria-label={`View ${app.company} application`} onClick={() => toast(`${app.company}: ${app.next}`)}><ArrowRight size={15}/></button></article>)}</div></section>
+      <section className="events-panel" id="events"><div className="lower-heading"><div><div className="section-kicker">DON'T MISS A THING</div><h2>Coming up</h2></div><button className="calendar-link" aria-label="Open calendar" onClick={() => toast("Your placement calendar is up to date.")}><CalendarDays size={17}/></button></div><div className="event-list"><article className="event-row"><div className="event-date"><b>08</b><span>NOV</span></div><div className="event-copy"><b>Career fair · Tech edition</b><span>10:00 AM · Main auditorium</span><small><span/> Registration open</small></div><button className="event-action" aria-label="Register for career fair" onClick={() => toast("You're registered for the Tech Career Fair! Save the date: Nov 8.")}><ArrowRight size={15}/></button></article><article className="event-row"><div className="event-date"><b>12</b><span>NOV</span></div><div className="event-copy"><b>Adobe · Technical round</b><span>2:30 PM · Online interview</span><small><Clock3 size={11}/> In 7 days</small></div><button className="event-action" aria-label="View Adobe interview" onClick={() => toast("Adobe technical round · Nov 12 at 2:30 PM. Good luck!")}><ArrowRight size={15}/></button></article></div><button className="all-events" onClick={() => toast("Showing your upcoming placement events.")}>View full calendar <ArrowRight size={14}/></button></section></div>
+      <footer className="footer"><span>© 2025 CampusConnect <i/> Built for what's next.</span><span><button onClick={() => toast("Contact the placement cell at placements@campus.edu")}>Help & support</button><button onClick={() => toast("Your placement team manages the opportunities shown here.")}>About the placement cell</button></span></footer>
+      </div></main>
+      {notice&&<div className="toast-message"><span><Check size={14}/></span>{notice}<button aria-label="Dismiss" onClick={()=>setNotice("")}><X size={14}/></button></div>}
+      {modalJob&&<div className="modal-scrim" onClick={()=>setModalJob(null)}><section className="apply-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={e=>e.stopPropagation()}><button className="modal-close" aria-label="Close" onClick={()=>setModalJob(null)}><X size={18}/></button><div className="company-mark modal-mark" style={{background:modalJob.color,color:modalJob.ink}}>{modalJob.mark}</div><div className="modal-kicker">{modalJob.company} · {modalJob.type}</div><h2 id="modal-title">{modalJob.title}</h2><p>{modalJob.place} <span>·</span> {modalJob.pay}</p><div className="modal-detail"><Sparkles size={16}/><span>Your profile is a <b>{modalJob.match}% match</b> for this role. Your resume and academic details will be shared with the recruiter.</span></div><div className="modal-buttons"><button className="modal-cancel" onClick={()=>setModalJob(null)}>Not now</button><button className="apply-button modal-apply" onClick={()=>{setApplied([...applied,modalJob.id]);toast(`Application started for ${modalJob.company}. Complete your profile to submit.`);setModalJob(null)}}>Start application <ArrowRight size={15}/></button></div><small className="modal-note">You can review your details before submitting.</small></section></div>}
+  </div>;
 }
+
