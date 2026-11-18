@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
 import type {
   Application,
   Company,
@@ -153,7 +154,7 @@ function friendlyApplyError(message: string): string {
 export const applyToJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid(), coverLetter: z.string().max(4000).optional() }).parse(input))
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("applications").insert({
       job_id: input.jobId,
       student_id: context.userId,
@@ -167,7 +168,7 @@ export const applyToJob = createServerFn({ method: "POST" })
 export const withdrawApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ applicationId: z.string().uuid() }).parse(input))
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("applications").delete().eq("id", input.applicationId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -184,10 +185,11 @@ export const updateApplicationStatus = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
-    const patch: Record<string, unknown> = { status: input.status };
-    if (input.status === "selected") patch.final_package = input.finalPackage ?? null;
-    if (input.status !== "selected") patch.final_package = null;
+  .handler(async ({ context, data: input }) => {
+    const patch: { status: string; final_package: number | null } = {
+      status: input.status,
+      final_package: input.status === "selected" ? (input.finalPackage ?? null) : null,
+    };
     const { error } = await context.supabase
       .from("applications")
       .update(patch)
@@ -209,7 +211,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("interviews").insert({
       application_id: input.applicationId,
       round: input.round,
@@ -234,8 +236,8 @@ export const updateInterview = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
-    const patch: Record<string, unknown> = {};
+  .handler(async ({ context, data: input }) => {
+    const patch: { status?: string; feedback?: string } = {};
     if (input.status) patch.status = input.status;
     if (input.feedback !== undefined) patch.feedback = input.feedback;
     const { error } = await context.supabase.from("interviews").update(patch).eq("id", input.interviewId);
@@ -267,7 +269,7 @@ export const upsertJob = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const row = {
       company_id: input.companyId,
       title: input.title,
@@ -298,7 +300,7 @@ export const upsertJob = createServerFn({ method: "POST" })
 export const setJobStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid(), status: z.enum(["open", "closed"]) }).parse(input))
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("jobs").update({ status: input.status }).eq("id", input.jobId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -307,7 +309,7 @@ export const setJobStatus = createServerFn({ method: "POST" })
 export const deleteJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("jobs").delete().eq("id", input.jobId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -327,7 +329,7 @@ export const saveCompany = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const row = {
       name: input.name.trim(),
       industry: input.industry?.trim() || null,
@@ -354,7 +356,7 @@ export const saveCompany = createServerFn({ method: "POST" })
 export const verifyCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ companyId: z.string().uuid(), verified: z.boolean() }).parse(input))
-  .handler(async ({ context, input }) => {
+  .handler(async ({ context, data: input }) => {
     const { error } = await context.supabase.from("companies").update({ verified: input.verified }).eq("id", input.companyId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -377,8 +379,8 @@ export const updateProfile = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ context, input }) => {
-    const patch: Record<string, unknown> = {};
+  .handler(async ({ context, data: input }) => {
+    const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
     if (input.fullName !== undefined) patch.full_name = input.fullName.trim();
     if (input.branch !== undefined) patch.branch = input.branch || null;
     if (input.cgpa !== undefined) patch.cgpa = input.cgpa;

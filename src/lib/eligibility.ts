@@ -7,7 +7,7 @@ import type { Job, Profile } from "./types";
 export type EligibilityCheck = {
   label: string;
   ok: boolean;
-  detail?: string;
+  detail?: string | undefined;
 };
 
 export type EligibilityResult = {
