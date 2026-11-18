@@ -1,71 +1,186 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowRight, Bell, Bookmark, BriefcaseBusiness, Building2, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, Compass, GraduationCap, LayoutDashboard, MapPin, Menu, Search, SlidersHorizontal, Sparkles, TrendingUp, X } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { BriefcaseBusiness, CalendarCheck2, GraduationCap, Loader2, ShieldCheck, Sparkles, Trophy, UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { LovableMark } from "@lovable.dev/cloud-auth-js/react";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import heroImg from "@/assets/hero-campus.jpg";
 
-export const Route = createFileRoute("/")({ component: Index });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Placement Cell — Sign in to your campus recruitment portal" },
+      { name: "description", content: "Students find eligible roles, recruiters manage hiring drives, and the placement office tracks every offer — in one portal." },
+      { property: "og:title", content: "Placement Cell — Campus Recruitment Portal" },
+      { property: "og:description", content: "Jobs, eligibility checks, interview schedules and selection results in one place." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Landing,
+});
 
-const jobs = [
-  { id: 1, company: "Google", mark: "G", color: "#fff", ink: "#4285f4", title: "Associate Software Engineer", type: "Full-time", place: "Bengaluru · Hybrid", pay: "₹18–24 LPA", date: "Nov 18", tag: "Top match", match: 98, logo: "google" },
-  { id: 2, company: "Razorpay", mark: "R", color: "#eaf2ff", ink: "#2563eb", title: "Product Engineering Intern", type: "Internship", place: "Bengaluru · On-site", pay: "₹65,000 / month", date: "Nov 21", tag: "New", match: 94, logo: "razor" },
-  { id: 3, company: "Microsoft", mark: "M", color: "#fff", ink: "#2675c9", title: "Software Engineer · University", type: "Full-time", place: "Hyderabad · Hybrid", pay: "₹21–28 LPA", date: "Nov 24", tag: "Top match", match: 91, logo: "microsoft" },
-  { id: 4, company: "Atlassian", mark: "A", color: "#eff5ff", ink: "#1868db", title: "Graduate Software Engineer", type: "Full-time", place: "Remote · India", pay: "₹20–26 LPA", date: "Nov 28", tag: "Closing soon", match: 87, logo: "atlassian" },
-  { id: 5, company: "Zomato", mark: "z", color: "#fff1f0", ink: "#e23744", title: "Data Analyst Intern", type: "Internship", place: "Gurugram · On-site", pay: "₹45,000 / month", date: "Dec 02", tag: "New", match: 83, logo: "zomato" },
+const DEMOS = [
+  { label: "Student", email: "aarav.sharma@campus.edu", icon: GraduationCap },
+  { label: "Recruiter", email: "careers@nexovialabs.com", icon: BriefcaseBusiness },
+  { label: "Admin", email: "placement.office@campus.edu", icon: ShieldCheck },
 ];
 
-const applications = [
-  { company: "Adobe", mark: "A", color: "#fff0ed", ink: "#eb1000", title: "Software Engineer", status: "Interview", progress: 68, next: "Technical round · Nov 12" },
-  { company: "Flipkart", mark: "F", color: "#fff7e5", ink: "#2874f0", title: "SDE Intern", status: "Shortlisted", progress: 42, next: "Online assessment · Nov 14" },
-  { company: "Deloitte", mark: "D", color: "#f0edff", ink: "#6b4ce6", title: "Analyst Trainee", status: "Applied", progress: 19, next: "Application under review" },
+const FEATURES = [
+  { icon: Sparkles, title: "Eligibility, instantly", text: "Branch, CGPA and batch checked before you apply." },
+  { icon: CalendarCheck2, title: "Interview schedules", text: "Every round, time and venue in one timeline." },
+  { icon: Trophy, title: "Selection tracking", text: "Offers and packages recorded for the placement report." },
 ];
 
-function Index() {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("All roles");
-  const [saved, setSaved] = useState<number[]>([]);
-  const [applied, setApplied] = useState<number[]>([]);
-  const [activeNav, setActiveNav] = useState("Overview");
-  const [notice, setNotice] = useState("");
-  const [showAll, setShowAll] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [modalJob, setModalJob] = useState<(typeof jobs)[number] | null>(null);
-  useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        document.getElementById("job-search")?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, []);
-  const filteredJobs = useMemo(() => jobs.filter((job) => (filter === "All roles" || job.type === filter) && `${job.title} ${job.company} ${job.place}`.toLowerCase().includes(query.toLowerCase())), [query, filter]);
-  const toast = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 2800); };
-  const nav = [{ name: "Overview", icon: LayoutDashboard }, { name: "Find opportunities", icon: Compass }, { name: "My applications", icon: BriefcaseBusiness }, { name: "Events & calendar", icon: CalendarDays }];
-  const goTo = (name: string) => { setActiveNav(name); setMobileMenu(false); if (name === "Find opportunities") document.getElementById("opportunities")?.scrollIntoView({ behavior: "smooth" }); else if (name === "My applications") document.getElementById("applications")?.scrollIntoView({ behavior: "smooth" }); else if (name === "Events & calendar") document.getElementById("events")?.scrollIntoView({ behavior: "smooth" }); else window.scrollTo({ top: 0, behavior: "smooth" }); };
-  return <div className="portal-shell">
-    <aside className={`sidebar ${mobileMenu ? "sidebar-open" : ""}`}>
-      <a className="brand" href="#top" onClick={() => goTo("Overview")}><span className="brand-icon"><GraduationCap size={21}/></span><span>campus<span className="brand-light">connect</span><small>CAREERS, CONNECTED</small></span></a>
-      <div className="side-label">WORKSPACE</div>
-      <nav>{nav.map(({name, icon: Icon}) => <button key={name} className={`nav-item ${activeNav === name ? "active" : ""}`} onClick={() => goTo(name)}><Icon size={18}/><span>{name}</span>{name === "My applications" && <i className="nav-count">3</i>}</button>)}</nav>
-      <div className="side-label tools-label">YOUR JOURNEY</div>
-      <button className="nav-item" onClick={() => toast("Your profile is 85% complete — add your resume to reach 100%.")}><GraduationCap size={18}/><span>My profile</span><span className="profile-dot"/></button>
-      <button className="nav-item" onClick={() => toast("Career resources are coming soon.")}><Sparkles size={18}/><span>Career resources</span></button>
-      <div className="sidebar-bottom"><div className="help-card"><span className="help-icon"><CircleHelp size={16}/></span><strong>Need a hand?</strong><p>Your placement team is here to help you land your first role.</p><button onClick={() => toast("Reach your placement cell at placements@campus.edu")}>Talk to your placement cell <ArrowRight size={13}/></button></div><button className="student-profile" onClick={() => toast("Signed in as Srushti · Student")}><span className="avatar">SH</span><span><b>Srushti</b><small>Computer Science · 2026</small></span><ChevronDown size={15}/></button></div>
-    </aside>
-    {mobileMenu && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileMenu(false)}/>}
-    <main className="main-area" id="top"><header className="topbar"><button className="mobile-menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation"><Menu size={20}/></button><div className="breadcrumb">Student portal <span>/</span> <b>{activeNav}</b></div><div className="top-actions"><span className="semester-pill"><span/> Placement season · 2026–27</span><button className="icon-button notification-button" aria-label="Notifications" onClick={() => toast("You're all caught up. Check back for placement updates!")}><Bell size={18}/><i/></button><div className="top-avatar">AS</div></div></header>
-      <div className="page-content"><section className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line"/> WEDNESDAY, NOVEMBER 4, 2026</div><h1>Your next chapter<br/><em>starts here.</em></h1><p className="welcome-copy">Good morning, Aarav. Your next opportunity is closer than you think.</p></div><div className="season-card"><div className="season-top"><span className="season-mark"><TrendingUp size={17}/></span><span className="season-label">YOUR PLACEMENT SEASON</span></div><div className="season-stat"><strong>73</strong><span>days remaining</span></div><div className="season-progress"><span/></div><div className="season-foot"><span>Season ends Jan 16, 2027</span><span>On track <ArrowDownRight size={13}/></span></div></div></section>
-      <section className="stats-grid" aria-label="Placement overview"><article className="stat-card"><span className="stat-icon lavender"><BriefcaseBusiness size={17}/></span><div className="stat-caption">ACTIVE APPLICATIONS</div><div className="stat-number">03 <span>applications</span></div><div className="stat-note"><span className="note-dot violet"/> 1 interview scheduled</div></article><article className="stat-card"><span className="stat-icon mint"><Building2 size={17}/></span><div className="stat-caption">OPEN OPPORTUNITIES</div><div className="stat-number">24 <span>roles</span></div><div className="stat-note"><span className="note-dot green"/> 8 new this week</div></article><article className="stat-card"><span className="stat-icon peach"><Bookmark size={17}/></span><div className="stat-caption">SAVED FOR LATER</div><div className="stat-number">{saved.length.toString().padStart(2,"0")} <span>roles</span></div><div className="stat-note"><span className="note-dot orange"/> Pick up where you left off</div></article><article className="stat-card"><span className="stat-icon blue"><CalendarDays size={17}/></span><div className="stat-caption">UP NEXT</div><div className="stat-number stat-date">NOV 12</div><div className="stat-note"><span className="note-dot blue-dot"/> Adobe · Technical round</div></article></section>
-      <section className="opportunity-section" id="opportunities"><div className="section-heading"><div><div className="section-kicker">MADE FOR YOUR NEXT MOVE</div><h2>Opportunities <span>for you</span></h2><p>Roles matched to your profile, skills, and ambitions.</p></div><button className="text-link" onClick={() => { setShowAll(!showAll); document.getElementById("job-search")?.focus(); }}>{showAll ? "Show fewer" : "Explore all roles"} <ArrowRight size={15}/></button></div>
-        <div className="job-toolbar"><label className="search-box"><Search size={17}/><input id="job-search" placeholder="Search roles, companies, or skills..." value={query} onChange={(e) => setQuery(e.target.value)}/><kbd>⌘ K</kbd></label><div className="filter-group"><SlidersHorizontal size={15}/>{["All roles","Full-time","Internship"].map((f) => <button key={f} onClick={() => setFilter(f)} className={`filter-chip ${filter === f ? "selected" : ""}`}>{f}</button>)}</div></div>
-        <div className="job-list">{filteredJobs.slice(0,showAll?5:4).map((job) => <article className="job-card" key={job.id}><div className={`company-mark ${job.logo}`} style={{background:job.color,color:job.ink}}>{job.mark}</div><div className="job-main"><div className="company-line">{job.company}<span className="verified">✓</span><span className={`job-tag ${job.tag === "New" ? "tag-new" : job.tag === "Closing soon" ? "tag-close" : ""}`}>{job.tag}</span></div><h3>{job.title}</h3><div className="job-meta"><span><MapPin size={13}/>{job.place}</span><i/><span>{job.type}</span><i/><b>{job.pay}</b></div></div><div className="job-match"><span>{job.match}% match</span><div className="match-track"><i style={{width:`${job.match}%`}}/></div><small>Based on your profile</small></div><div className="job-actions"><button className={`save-button ${saved.includes(job.id)?"saved":""}`} aria-label={saved.includes(job.id)?"Remove saved job":"Save job"} onClick={() => setSaved(saved.includes(job.id)?saved.filter(id=>id!==job.id):[...saved,job.id])}><Bookmark size={17} fill={saved.includes(job.id)?"currentColor":"none"}/></button><button className="apply-button" onClick={() => applied.includes(job.id)?toast(`Your application to ${job.company} is in progress.`):setModalJob(job)}>{applied.includes(job.id)?"Applied":"View role"}<ArrowRight size={14}/></button></div></article>)}{filteredJobs.length===0&&<div className="empty-state"><Search size={22}/><b>No roles found</b><span>Try another keyword or switch your filters.</span></div>}</div><div className="deadline-note"><Clock3 size={14}/><span>Deadlines are approaching for <b>4 opportunities</b></span><button onClick={() => {setFilter("All roles");setQuery("");setShowAll(true)}}>See all deadlines <ArrowRight size={13}/></button></div>
-      </section>
-      <div className="lower-grid"><section className="applications-panel" id="applications"><div className="lower-heading"><div><div className="section-kicker">KEEP THE MOMENTUM</div><h2>Your applications</h2></div><button className="mini-link" onClick={() => toast("Showing all 3 active applications.")}>View all <ArrowRight size={14}/></button></div><div className="application-list">{applications.map((app,i)=><article key={app.company} className="application-row"><div className="company-mark mini-mark" style={{background:app.color,color:app.ink}}>{app.mark}</div><div className="application-info"><b>{app.company}</b><span>{app.title}</span><div className="application-progress"><i style={{width:`${app.progress}%`}}/></div></div><div className="application-status"><span className={`status-chip status-${i}`}>{app.status}</span><small>{app.next}</small></div><button className="row-arrow" aria-label={`View ${app.company} application`} onClick={() => toast(`${app.company}: ${app.next}`)}><ArrowRight size={15}/></button></article>)}</div></section>
-      <section className="events-panel" id="events"><div className="lower-heading"><div><div className="section-kicker">DON'T MISS A THING</div><h2>Coming up</h2></div><button className="calendar-link" aria-label="Open calendar" onClick={() => toast("Your placement calendar is up to date.")}><CalendarDays size={17}/></button></div><div className="event-list"><article className="event-row"><div className="event-date"><b>08</b><span>NOV</span></div><div className="event-copy"><b>Career fair · Tech edition</b><span>10:00 AM · Main auditorium</span><small><span/> Registration open</small></div><button className="event-action" aria-label="Register for career fair" onClick={() => toast("You're registered for the Tech Career Fair! Save the date: Nov 8.")}><ArrowRight size={15}/></button></article><article className="event-row"><div className="event-date"><b>12</b><span>NOV</span></div><div className="event-copy"><b>Adobe · Technical round</b><span>2:30 PM · Online interview</span><small><Clock3 size={11}/> In 7 days</small></div><button className="event-action" aria-label="View Adobe interview" onClick={() => toast("Adobe technical round · Nov 12 at 2:30 PM. Good luck!")}><ArrowRight size={15}/></button></article></div><button className="all-events" onClick={() => toast("Showing your upcoming placement events.")}>View full calendar <ArrowRight size={14}/></button></section></div>
-      <footer className="footer"><span>© 2025 CampusConnect <i/> Built for what's next.</span><span><button onClick={() => toast("Contact the placement cell at placements@campus.edu")}>Help & support</button><button onClick={() => toast("Your placement team manages the opportunities shown here.")}>About the placement cell</button></span></footer>
-      </div></main>
-      {notice&&<div className="toast-message"><span><Check size={14}/></span>{notice}<button aria-label="Dismiss" onClick={()=>setNotice("")}><X size={14}/></button></div>}
-      {modalJob&&<div className="modal-scrim" onClick={()=>setModalJob(null)}><section className="apply-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={e=>e.stopPropagation()}><button className="modal-close" aria-label="Close" onClick={()=>setModalJob(null)}><X size={18}/></button><div className="company-mark modal-mark" style={{background:modalJob.color,color:modalJob.ink}}>{modalJob.mark}</div><div className="modal-kicker">{modalJob.company} · {modalJob.type}</div><h2 id="modal-title">{modalJob.title}</h2><p>{modalJob.place} <span>·</span> {modalJob.pay}</p><div className="modal-detail"><Sparkles size={16}/><span>Your profile is a <b>{modalJob.match}% match</b> for this role. Your resume and academic details will be shared with the recruiter.</span></div><div className="modal-buttons"><button className="modal-cancel" onClick={()=>setModalJob(null)}>Not now</button><button className="apply-button modal-apply" onClick={()=>{setApplied([...applied,modalJob.id]);toast(`Application started for ${modalJob.company}. Complete your profile to submit.`);setModalJob(null)}}>Start application <ArrowRight size={15}/></button></div><small className="modal-note">You can review your details before submitting.</small></section></div>}
-  </div>;
+function GoogleLogo() {
+  return (
+    <svg aria-hidden="true" width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+  );
 }
 
+function Landing() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [tab, setTab] = useState("signin");
+  const [role, setRole] = useState<"student" | "recruiter">("student");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/dashboard", replace: true });
+    });
+  }, [navigate]);
+
+  async function signIn(email: string, password: string, key: string) {
+    setBusy(key);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success("Welcome back!");
+    navigate({ to: "/dashboard" });
+  }
+
+  async function signUp() {
+    if (form.name.trim().length < 2) return toast.error("Please enter your full name.");
+    if (form.password.length < 6) return toast.error("Password must be at least 6 characters.");
+    setBusy("signup");
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { emailRedirectTo: window.location.origin, data: { full_name: form.name.trim(), role } },
+    });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    if (data.session) return navigate({ to: "/dashboard" });
+    toast.success("Check your email to confirm your account, then sign in.");
+    setTab("signin");
+  }
+
+  async function oauth(provider: "google" | "lovable") {
+    setBusy(provider);
+    const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
+    if (result.error) {
+      setBusy(null);
+      return toast.error(result.error.message ?? "Sign-in failed");
+    }
+    if (result.redirected) return;
+    navigate({ to: "/dashboard" });
+  }
+
+  return (
+    <div className="grid min-h-screen lg:grid-cols-[1.15fr_1fr]">
+      <section className="hero-dark text-hero relative flex flex-col justify-between overflow-hidden p-8 lg:p-14">
+        <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity" />
+        <div className="relative flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-gold/90 font-display text-lg font-bold text-primary">P</div>
+          <span className="font-display text-xl font-semibold">Placement Cell</span>
+        </div>
+        <div className="relative my-12 max-w-xl">
+          <p className="eyebrow text-gold">Campus recruitment, centralised</p>
+          <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-6xl">
+            From first application to <em className="text-gold">final offer.</em>
+          </h1>
+          <p className="mt-5 text-lg opacity-80">
+            Students discover roles they're eligible for. Recruiters run drives end-to-end. The placement office sees every result in real time.
+          </p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="rounded-xl border border-gold/20 bg-background/5 p-4 backdrop-blur">
+                <f.icon className="h-5 w-5 text-gold" />
+                <p className="mt-3 font-semibold">{f.title}</p>
+                <p className="mt-1 text-sm opacity-70">{f.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="relative text-sm opacity-60">© {new Date().getFullYear()} Training & Placement Office</p>
+      </section>
+
+      <section className="flex items-center justify-center bg-background p-6 md:p-12">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-semibold">Welcome</h2>
+          <p className="mt-1 text-muted-foreground">Sign in or create your account to continue.</p>
+
+          <Tabs value={tab} onValueChange={setTab} className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Log in</TabsTrigger>
+              <TabsTrigger value="signup">Sign up</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="signin">
+              <form className="mt-4 space-y-4" onSubmit={(e) => { e.preventDefault(); signIn(form.email, form.password, "signin"); }}>
+                <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@campus.edu" /></div>
+                <div className="space-y-1.5"><Label htmlFor="pw">Password</Label><Input id="pw" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+                <Button type="submit" className="w-full" disabled={!!busy}>{busy === "signin" && <Loader2 className="animate-spin" />}Log in</Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <form className="mt-4 space-y-4" onSubmit={(e) => { e.preventDefault(); signUp(); }}>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["student", "recruiter"] as const).map((r) => (
+                    <button type="button" key={r} onClick={() => setRole(r)}
+                      className={`flex items-center gap-2 rounded-lg border p-3 text-left text-sm font-medium transition ${role === r ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "hover:bg-muted"}`}>
+                      {r === "student" ? <GraduationCap className="h-4 w-4" /> : <BriefcaseBusiness className="h-4 w-4" />}
+                      I'm a {r}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1.5"><Label htmlFor="name">Full name</Label><Input id="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label htmlFor="semail">Email</Label><Input id="semail" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label htmlFor="spw">Password</Label><Input id="spw" type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+                <Button type="submit" className="w-full" disabled={!!busy}>{busy === "signup" && <Loader2 className="animate-spin" />}Create account</Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><div className="h-px flex-1 bg-border" />or<div className="h-px flex-1 bg-border" /></div>
+          <div className="grid gap-2">
+            <Button type="button" variant="outline" disabled={!!busy} onClick={() => oauth("google")}
+              className="border-[#747775] bg-[#FFFFFF] text-[#1F1F1F] hover:bg-[#FFFFFF]/90 hover:text-[#1F1F1F]">
+              <GoogleLogo />Continue with Google
+            </Button>
+            <Button type="button" variant="outline" disabled={!!busy} onClick={() => oauth("lovable")}><LovableMark className="size-[18px]" />Continue with Lovable</Button>
+          </div>
+
+          <div className="mt-8 rounded-xl border border-dashed border-gold/40 bg-accent/40 p-4">
+            <p className="eyebrow text-accent-foreground">Try a demo account</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {DEMOS.map((d) => (
+                <Button key={d.label} size="sm" variant="secondary" disabled={!!busy} onClick={() => signIn(d.email, "demo1234", d.label)}>
+                  {busy === d.label ? <Loader2 className="animate-spin" /> : <d.icon />}{d.label}
+                </Button>
+              ))}
+            </div>
+            <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground"><UserRound className="h-3 w-3" />Password for all demo accounts: demo1234</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -48,7 +48,8 @@ export const getRecruiterData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const me = await getMe();
+    const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const isAdmin = (roleRows ?? []).some((r) => r.role === "admin");
 
     const { data: jobs, error: jobsErr } = await supabase
       .from("jobs")
@@ -57,7 +58,7 @@ export const getRecruiterData = createServerFn({ method: "GET" })
     if (jobsErr) throw new Error(jobsErr.message);
 
     const visibleJobs =
-      me.primaryRole === "admin"
+      isAdmin
         ? ((jobs ?? []) as unknown as JobWithCompany[])
         : ((jobs ?? []).filter((j) => j.posted_by === userId) as unknown as JobWithCompany[]);
 
