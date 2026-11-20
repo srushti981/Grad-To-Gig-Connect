@@ -60,14 +60,14 @@ function Landing() {
     setBusy(key);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(null);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Welcome back!");
     navigate({ to: "/dashboard" });
   }
 
   async function signUp() {
-    if (form.name.trim().length < 2) return toast.error("Please enter your full name.");
-    if (form.password.length < 6) return toast.error("Password must be at least 6 characters.");
+    if (form.name.trim().length < 2) { toast.error("Please enter your full name."); return; }
+    if (form.password.length < 6) { toast.error("Password must be at least 6 characters."); return; }
     setBusy("signup");
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
@@ -75,8 +75,8 @@ function Landing() {
       options: { emailRedirectTo: window.location.origin, data: { full_name: form.name.trim(), role } },
     });
     setBusy(null);
-    if (error) return toast.error(error.message);
-    if (data.session) return navigate({ to: "/dashboard" });
+    if (error) { toast.error(error.message); return; }
+    if (data.session) { navigate({ to: "/dashboard" }); return; }
     toast.success("Check your email to confirm your account, then sign in.");
     setTab("signin");
   }
@@ -86,7 +86,8 @@ function Landing() {
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) {
       setBusy(null);
-      return toast.error(result.error.message ?? "Sign-in failed");
+      toast.error(result.error.message ?? "Sign-in failed");
+      return;
     }
     if (result.redirected) return;
     navigate({ to: "/dashboard" });

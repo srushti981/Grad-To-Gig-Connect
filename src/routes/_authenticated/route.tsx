@@ -11,4 +11,9 @@ export const Route = createFileRoute("/_authenticated")({
   },
   loader: ({ context }) => context.queryClient.ensureQueryData(meQuery),
   component: AppShell,
+  pendingComponent: () => (
+    <div className="grid min-h-screen place-items-center bg-background">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+    </div>
+  ),
 });
